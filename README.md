@@ -18,31 +18,9 @@ Production-grade **Fact Knowledge Layer** built for the **Superjoin Engineering 
 
 ---
 
-## 📂 Repository File Structure
-
-```text
-.
-├── app.py                         # Streamlit interactive audit & inspection dashboard
-├── fact_layer/
-│   └── core/
-│       ├── models.py              # GroundedFact hyper-tuple data contracts (s, p, o, τ, σ, μ)
-│       ├── parser.py              # Memory-bounded streaming layout parser (PyMuPDF)
-│       ├── extractor.py           # Dual-track LLM & opportunistic vision extractor
-│       ├── normalizer.py          # Zero-hardcoding hybrid scale & entity normalizer
-│       ├── reconciler.py          # Allen's 1D interval algebra deterministic engine
-│       ├── validator.py           # Fact integrity gate & Case 4 anomaly circuit breaker
-│       └── storage.py             # Partitioned inverted SQLite store
-├── tests/
-│   ├── test_backend_rigorous.py   # Complete system stress & memory benchmark suite
-│   └── evaluate_nli_metrics.py    # Automated Scikit-Learn NLI classification evaluator
-├── starter-datasets/              # Evaluation PDFs (Delhivery filings & India Macro)
-├── requirements.txt
-└── README.md
-```
-
----
-
 ## 🏗️ System Architecture & Pipeline Workflow
+
+![System Architecture](sjarch.png)
 
 ```mermaid
 graph TD
@@ -175,6 +153,30 @@ To generalize across financial prospectuses, annual reports, and macro datasets 
 ===========================================================================
 FINAL AUDIT VERDICT: Macro-F1 = 1.00 | Quarantine-F1 = 1.00
 ===========================================================================
+```
+
+---
+
+## 📂 Repository File Structure
+
+```text
+.
+├── app.py                         # Streamlit interactive audit & inspection dashboard
+├── fact_layer/
+│   └── core/
+│       ├── models.py              # GroundedFact hyper-tuple data contracts (s, p, o, τ, σ, μ)
+│       ├── parser.py              # Memory-bounded streaming layout parser (PyMuPDF)
+│       ├── extractor.py           # Dual-track LLM & opportunistic vision extractor
+│       ├── normalizer.py          # Zero-hardcoding hybrid scale & entity normalizer
+│       ├── reconciler.py          # Allen's 1D interval algebra deterministic engine
+│       ├── validator.py           # Fact integrity gate & Case 4 anomaly circuit breaker
+│       └── storage.py             # Partitioned inverted SQLite store
+├── tests/
+│   ├── test_backend_rigorous.py   # Complete system stress & memory benchmark suite
+│   └── evaluate_nli_metrics.py    # Automated Scikit-Learn NLI classification evaluator
+├── starter-datasets/              # Evaluation PDFs (Delhivery filings & India Macro)
+├── requirements.txt
+└── README.md
 ```
 
 ---
