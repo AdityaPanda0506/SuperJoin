@@ -1,0 +1,27 @@
+﻿# ── Ruff configuration for Fact Knowledge Layer ───────────────────────────────
+line-length = 100
+target-version = "py311"
+
+[lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # bugbear
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "B008",  # do not perform function calls in default args
+    "UP007", # use X | Y for type unions (Python 3.10+)
+    "F401",  # unused imports in __init__.py handled by __all__
+]
+
+[lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"tests/*" = ["S101"]   # allow assert in tests
+
+[format]
+quote-style = "double"
+indent-style = "space"
