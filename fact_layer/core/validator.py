@@ -5,7 +5,7 @@ Validates verbatim quote grounding against source text and detects degenerate co
 
 import re
 from difflib import SequenceMatcher
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Optional, Union
 
 from .models import GroundedFact
 
@@ -119,10 +119,9 @@ class FactIntegrityGate:
         Returns:
             Validated (and potentially quarantined) GroundedFact.
         """
-        is_visual = (
-            getattr(fact.provenance, "provenance_modality", "TEXT") == "VISUAL_CHART"
-            or fact.provenance.verbatim_quote.startswith("[Visual Chart]")
-        )
+        is_visual = getattr(
+            fact.provenance, "provenance_modality", "TEXT"
+        ) == "VISUAL_CHART" or fact.provenance.verbatim_quote.startswith("[Visual Chart]")
 
         # 1. Quote / Visual Grounding Verification Check
         quote = fact.provenance.verbatim_quote
@@ -163,11 +162,11 @@ class FactIntegrityGate:
     @classmethod
     def validate_facts(
         cls,
-        facts: Union[List[GroundedFact], str],
-        page_texts: Optional[Union[Dict[int, str], List[GroundedFact]]] = None,
-        page_text_map: Optional[Dict[int, str]] = None,
-        page_text: Optional[str] = None,
-    ) -> Tuple[List[GroundedFact], List[GroundedFact]]:
+        facts: Union[list[GroundedFact], str],
+        page_texts: Union[dict[int, str], list[GroundedFact]] | None = None,
+        page_text_map: dict[int, str] | None = None,
+        page_text: str | None = None,
+    ) -> tuple[list[GroundedFact], list[GroundedFact]]:
         """
         Batch validate a list of extracted facts against page texts or visual chart evidence.
 
@@ -186,8 +185,8 @@ class FactIntegrityGate:
         gate = cls()
         p_texts = page_texts if isinstance(page_texts, dict) else (page_text_map or {})
 
-        valid_facts: List[GroundedFact] = []
-        quarantined_facts: List[GroundedFact] = []
+        valid_facts: list[GroundedFact] = []
+        quarantined_facts: list[GroundedFact] = []
 
         for fact in facts:
             page_num = fact.provenance.page_number

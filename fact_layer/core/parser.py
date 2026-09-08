@@ -7,15 +7,17 @@ import hashlib
 import io
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, Tuple
+from typing import Any, Optional, Union
+
 import pymupdf  # Modern PyMuPDF API
 
 
-class PageChunk(object):
+class PageChunk:
     """
     Represents a structured page-level text chunk extracted from a PDF document.
     Supports opportunistic multimodal visual chart fallback.
     """
+
     def __init__(
         self,
         doc_name: str,
@@ -25,7 +27,7 @@ class PageChunk(object):
         has_tables: bool,
         token_estimate: int,
         has_images: bool = False,
-        image_bytes: Optional[bytes] = None,
+        image_bytes: bytes | None = None,
         provenance_modality: str = "TEXT",
     ):
         self.doc_name = doc_name
@@ -112,7 +114,7 @@ class DocumentParser:
         return False
 
     @classmethod
-    def detect_visual_elements(cls, page: pymupdf.Page) -> Tuple[bool, bool]:
+    def detect_visual_elements(cls, page: pymupdf.Page) -> tuple[bool, bool]:
         """
         Detect visual elements (embedded images, bar/line plots, infographics) and tables.
         Returns: Tuple of (has_visual_elements: bool, has_tables: bool)
@@ -144,8 +146,8 @@ class DocumentParser:
     def parse_pdf(
         cls,
         source_input: Union[str, Path, bytes, io.BytesIO],
-        doc_name: Optional[str] = None,
-    ) -> List[PageChunk]:
+        doc_name: str | None = None,
+    ) -> list[PageChunk]:
         """Classmethod helper to parse PDF and return list of PageChunk objects."""
         parser = cls()
         _, chunks, _ = parser.parse_document(source_input, doc_name=doc_name)
@@ -156,7 +158,7 @@ class DocumentParser:
         cls,
         buffer: Union[bytes, io.BytesIO, memoryview],
         doc_name: str,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Parse a PDF buffer into a list of page dictionaries containing clean text, page number, doc name, and doc hash.
         """
@@ -166,22 +168,24 @@ class DocumentParser:
         doc_hash, chunks, _ = parser.parse_document(buffer, doc_name=doc_name)
         pages = []
         for chunk in chunks:
-            pages.append({
-                "clean_text": chunk.clean_text,
-                "source_doc_name": chunk.doc_name,
-                "page_number": chunk.page_number,
-                "doc_hash": chunk.doc_hash,
-                "has_images": chunk.has_images,
-                "image_bytes": chunk.image_bytes,
-                "provenance_modality": chunk.provenance_modality,
-            })
+            pages.append(
+                {
+                    "clean_text": chunk.clean_text,
+                    "source_doc_name": chunk.doc_name,
+                    "page_number": chunk.page_number,
+                    "doc_hash": chunk.doc_hash,
+                    "has_images": chunk.has_images,
+                    "image_bytes": chunk.image_bytes,
+                    "provenance_modality": chunk.provenance_modality,
+                }
+            )
         return pages
 
     def parse_document(
         self,
         source_input: Union[str, Path, bytes, io.BytesIO],
-        doc_name: Optional[str] = None,
-    ) -> Tuple[str, List[PageChunk], Dict[int, str]]:
+        doc_name: str | None = None,
+    ) -> tuple[str, list[PageChunk], dict[int, str]]:
         """
         Parse a PDF document source into page chunks.
 
@@ -209,8 +213,8 @@ class DocumentParser:
         doc_hash = self.compute_sha256(pdf_bytes)
         doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
 
-        page_chunks: List[PageChunk] = []
-        page_texts: Dict[int, str] = {}
+        page_chunks: list[PageChunk] = []
+        page_texts: dict[int, str] = {}
 
         for page_idx in range(len(doc)):
             page_num = page_idx + 1  # 1-indexed
@@ -229,9 +233,7 @@ class DocumentParser:
             page_texts[page_num] = clean_text or "[Visual Page]"
 
             if token_estimate > self.max_tokens_per_chunk:
-                sub_chunks = self._sub_chunk_text(
-                    clean_text, self.max_tokens_per_chunk
-                )
+                sub_chunks = self._sub_chunk_text(clean_text, self.max_tokens_per_chunk)
                 for sub_text in sub_chunks:
                     page_chunks.append(
                         PageChunk(
@@ -264,7 +266,7 @@ class DocumentParser:
         doc.close()
         return doc_hash, page_chunks, page_texts
 
-    def _sub_chunk_text(self, text: str, max_tokens: int) -> List[str]:
+    def _sub_chunk_text(self, text: str, max_tokens: int) -> list[str]:
         """Split page text into smaller paragraph-bounded chunks if oversized."""
         paragraphs = text.split("\n\n")
         chunks = []

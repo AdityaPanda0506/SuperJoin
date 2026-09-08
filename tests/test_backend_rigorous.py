@@ -11,6 +11,7 @@ import time
 import tracemalloc
 import zipfile
 from pathlib import Path
+
 import pymupdf
 import pytest
 
@@ -23,20 +24,20 @@ if str(PROJECT_ROOT) not in sys.path:
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
-from fact_layer.core import (
+from fact_layer.core import (  # noqa: E402
+    ContextBoundingBox,
     DocumentParser,
     FactExtractor,
     FactIntegrityGate,
-    FactStore,
     FactReconciler,
+    FactStore,
     GeneralizedNormalizer,
-    evaluate_temporal_intervals,
-    IntervalRelation,
     GroundedFact,
-    ContextBoundingBox,
-    TemporalInterval,
+    IntervalRelation,
     Provenance,
     ReconciliationResult,
+    TemporalInterval,
+    evaluate_temporal_intervals,
 )
 
 
@@ -134,7 +135,7 @@ def test_phase3_incremental_ingestion():
 
     extracted1 = extractor.extract_facts_from_chunks(sel_chunks1)
     valid1, q1 = validator.validate_facts(extracted1, sel_text1)
-    res1 = store.add_document_facts(valid1 + q1, doc1_hash, DOC1_PATH.name)
+    store.add_document_facts(valid1 + q1, doc1_hash, DOC1_PATH.name)
 
     n1_facts = len(store.get_all_facts())
     assert n1_facts > 0, "No facts stored for Doc 1!"
@@ -147,7 +148,7 @@ def test_phase3_incremental_ingestion():
     t0 = time.perf_counter()
     extracted2 = extractor.extract_facts_from_chunks(sel_chunks2)
     valid2, q2 = validator.validate_facts(extracted2, sel_text2)
-    res2 = store.add_document_facts(valid2 + q2, doc2_hash, DOC2_PATH.name)
+    store.add_document_facts(valid2 + q2, doc2_hash, DOC2_PATH.name)
     delta_t = time.perf_counter() - t0
 
     print(f"\n[Incremental Ingestion] Doc 2 processed in {delta_t:.4f}s")
@@ -197,7 +198,7 @@ def test_phase4_normalizer_resilience():
 def test_phase5_four_assignment_cases():
     """Test Phase 5: Verification of the 4 Required Assignment Cases."""
     parser = DocumentParser()
-    extractor = FactExtractor()
+    FactExtractor()
     validator = FactIntegrityGate()
     store = FactStore(db_path=":memory:")
 
@@ -205,7 +206,7 @@ def test_phase5_four_assignment_cases():
     doc2_hash, chunks2, text2 = parser.parse_document(DOC2_PATH)
 
     sel_text1 = {p: t for p, t in text1.items() if p <= 5}
-    sel_text2 = {p: t for p, t in text2.items() if p <= 5}
+    {p: t for p, t in text2.items() if p <= 5}
 
     # Case 1 Setup: Corroboration Fact
     corp1 = GroundedFact(
@@ -251,7 +252,12 @@ def test_phase5_four_assignment_cases():
         raw_value="₹500 Crores",
         canonical_value=5000000000.0,
         context_box=ContextBoundingBox(
-            temporal=TemporalInterval(raw_expression="FY24", granularity="YEAR", start_date="2023-04-01", end_date="2024-03-31"),
+            temporal=TemporalInterval(
+                raw_expression="FY24",
+                granularity="YEAR",
+                start_date="2023-04-01",
+                end_date="2024-03-31",
+            ),
             scope="Consolidated",
             canonical_unit="INR",
         ),
@@ -269,7 +275,12 @@ def test_phase5_four_assignment_cases():
         raw_value="₹750 Crores",
         canonical_value=7500000000.0,
         context_box=ContextBoundingBox(
-            temporal=TemporalInterval(raw_expression="FY24", granularity="YEAR", start_date="2023-04-01", end_date="2024-03-31"),
+            temporal=TemporalInterval(
+                raw_expression="FY24",
+                granularity="YEAR",
+                start_date="2023-04-01",
+                end_date="2024-03-31",
+            ),
             scope="Consolidated",
             canonical_unit="INR",
         ),
@@ -288,7 +299,12 @@ def test_phase5_four_assignment_cases():
         raw_value="₹4,911 Crores",
         canonical_value=49110000000.0,
         context_box=ContextBoundingBox(
-            temporal=TemporalInterval(raw_expression="FY22", granularity="YEAR", start_date="2021-04-01", end_date="2022-03-31"),
+            temporal=TemporalInterval(
+                raw_expression="FY22",
+                granularity="YEAR",
+                start_date="2021-04-01",
+                end_date="2022-03-31",
+            ),
             scope="Consolidated",
             canonical_unit="INR",
         ),
@@ -306,7 +322,12 @@ def test_phase5_four_assignment_cases():
         raw_value="₹8,141 Crores",
         canonical_value=81410000000.0,
         context_box=ContextBoundingBox(
-            temporal=TemporalInterval(raw_expression="FY24", granularity="YEAR", start_date="2023-04-01", end_date="2024-03-31"),
+            temporal=TemporalInterval(
+                raw_expression="FY24",
+                granularity="YEAR",
+                start_date="2023-04-01",
+                end_date="2024-03-31",
+            ),
             scope="Consolidated",
             canonical_unit="INR",
         ),
@@ -331,7 +352,9 @@ def test_phase5_four_assignment_cases():
     assert len(case3_res) > 0, "Case 3 Context Reconciled assertion failed!"
 
     # Assert Case 3 temporal progression dimension
-    assert any("Temporal Progression" in dim for dim in case3_res[0].differing_dimensions), "Case 3 missing Temporal Progression dimension!"
+    assert any("Temporal Progression" in dim for dim in case3_res[0].differing_dimensions), (
+        "Case 3 missing Temporal Progression dimension!"
+    )
 
     # Case 4 Setup: Failure Mitigation & Quarantine
     unanchored_num = GroundedFact(
@@ -381,10 +404,14 @@ def test_phase5_four_assignment_cases():
     print("[BROWNIE POINT 1: LARGE PDF STREAMING]  --> PASSED (Peak RAM: < 150MB)")
     print("[BROWNIE POINT 2: MULTI-PDF SCALE]      --> PASSED (Indexed facts across multiple docs)")
     print("[BROWNIE POINT 3: DYNAMIC SCHEMA]       --> PASSED (Macro/Corporate schema flexibility)")
-    print("[BROWNIE POINT 4: INCREMENTAL INGEST]   --> PASSED (O(N*K) run without rebuilding index)")
+    print(
+        "[BROWNIE POINT 4: INCREMENTAL INGEST]   --> PASSED (O(N*K) run without rebuilding index)"
+    )
     print()
     print("[ASSIGNMENT CASE 1: CORROBORATION]     --> VERIFIED (Quotes + Page Provenance linked)")
     print("[ASSIGNMENT CASE 2: CONTRADICTION]     --> VERIFIED (Value conflict identified)")
-    print("[ASSIGNMENT CASE 3: CONTEXT RECONCILED]--> VERIFIED (Temporal/scope interval algebra proven)")
+    print(
+        "[ASSIGNMENT CASE 3: CONTEXT RECONCILED]--> VERIFIED (Temporal/scope interval algebra proven)"
+    )
     print("[ASSIGNMENT CASE 4: FAILURE QUARANTINE]--> VERIFIED (Degenerate facts safely isolated)")
     print("=" * 80)

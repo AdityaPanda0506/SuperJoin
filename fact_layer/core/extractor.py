@@ -6,16 +6,17 @@ Extracts grounded, context-bounded hyper-tuple facts with token optimization, In
 import json
 import os
 import re
-from typing import List, Optional
+from typing import Optional
+
 from google import genai
 from google.genai import types
 
 from .models import (
-    PageExtractionBatch,
-    GroundedFact,
     ContextBoundingBox,
-    TemporalInterval,
+    GroundedFact,
+    PageExtractionBatch,
     Provenance,
+    TemporalInterval,
 )
 from .parser import PageChunk
 
@@ -52,7 +53,7 @@ class FactExtractor:
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
         model_name: str = "gemini-2.5-flash",
     ):
         """
@@ -72,7 +73,9 @@ class FactExtractor:
             except Exception as e:
                 print(f"[Warning] Failed to initialize GenAI client: {e}. Fallback mode active.")
         else:
-            print("[Info] GEMINI_API_KEY not found. FactExtractor operating in fallback/simulation mode.")
+            print(
+                "[Info] GEMINI_API_KEY not found. FactExtractor operating in fallback/simulation mode."
+            )
 
     @classmethod
     def extract(
@@ -81,7 +84,7 @@ class FactExtractor:
         source_doc_name: str,
         page_number: int,
         doc_hash: str,
-    ) -> List[GroundedFact]:
+    ) -> list[GroundedFact]:
         """
         Classmethod helper to extract grounded facts from a single page's text.
         """
@@ -151,10 +154,15 @@ class FactExtractor:
                         fact.provenance.source_doc_name = chunk.doc_name
                         fact.provenance.doc_hash = chunk.doc_hash
                         fact.provenance.page_number = chunk.page_number
-                        if "[visual chart]" in fact.provenance.verbatim_quote.lower() or chunk.has_images:
+                        if (
+                            "[visual chart]" in fact.provenance.verbatim_quote.lower()
+                            or chunk.has_images
+                        ):
                             fact.provenance.provenance_modality = "VISUAL_CHART"
                         else:
-                            fact.provenance.provenance_modality = getattr(chunk, "provenance_modality", "TEXT")
+                            fact.provenance.provenance_modality = getattr(
+                                chunk, "provenance_modality", "TEXT"
+                            )
                     return parsed_batch
 
             except Exception as e:
@@ -163,7 +171,7 @@ class FactExtractor:
         # Fallback heuristic / deterministic parsing when API key is missing or call fails
         return self._heuristic_fallback_extraction(chunk)
 
-    def extract_facts_from_chunks(self, chunks: List[PageChunk]) -> List[GroundedFact]:
+    def extract_facts_from_chunks(self, chunks: list[PageChunk]) -> list[GroundedFact]:
         """
         Extract facts across all page chunks in a document.
 
@@ -173,7 +181,7 @@ class FactExtractor:
         Returns:
             Flattened list of all extracted GroundedFact objects.
         """
-        all_facts: List[GroundedFact] = []
+        all_facts: list[GroundedFact] = []
         for chunk in chunks:
             batch = self.extract_facts_from_chunk(chunk)
             all_facts.extend(batch.facts)
@@ -184,12 +192,22 @@ class FactExtractor:
         Deterministic heuristic extractor for financial, operational, and macroeconomic documents.
         Recognizes Crores, Lakhs, Millions, Billions, PIN codes, Parcel Volume, Percentages, and Roles across multiline layouts.
         """
-        facts: List[GroundedFact] = []
+        facts: list[GroundedFact] = []
         text = chunk.clean_text
 
         # Extract dynamic entity candidate from text or document name stem
-        clean_stem = re.sub(r"^\d+\s*[\-_]?", "", chunk.doc_name).replace("-excerpt.pdf", "").replace(".pdf", "").replace("-", " ").replace("_", " ").strip()
-        if any(term in clean_stem.lower() for term in ["economic survey", "pib", "press release", "bulletin", "budget"]):
+        clean_stem = (
+            re.sub(r"^\d+\s*[\-_]?", "", chunk.doc_name)
+            .replace("-excerpt.pdf", "")
+            .replace(".pdf", "")
+            .replace("-", " ")
+            .replace("_", " ")
+            .strip()
+        )
+        if any(
+            term in clean_stem.lower()
+            for term in ["economic survey", "pib", "press release", "bulletin", "budget"]
+        ):
             doc_entity = "Government of India"
         else:
             doc_entity = clean_stem.title()
@@ -202,28 +220,75 @@ class FactExtractor:
         # Heuristic 1: Stat Box / KPI items (multiline friendly)
         kpi_patterns = [
             # Parcel shipments
-            (r"([>~]?\d+(?:\.\d+)?\s*(?:Bn|billion|Mn|million)?\s*(?:\(\d+\))?\s*\n?\s*Express parcel shipments[A-Za-z\s\n]*)", dynamic_entity, "Express Parcel Volume", "PARCELS"),
+            (
+                r"([>~]?\d+(?:\.\d+)?\s*(?:Bn|billion|Mn|million)?\s*(?:\(\d+\))?\s*\n?\s*Express parcel shipments[A-Za-z\s\n]*)",
+                dynamic_entity,
+                "Express Parcel Volume",
+                "PARCELS",
+            ),
             # PIN codes
-            (r"(\d{1,3}(?:,\d{3})*|\d+)\s*(?:\(\d+\))?\s*\n?\s*(?:Pin codes covered|PIN codes covered|pin codes)", dynamic_entity, "PIN Code Coverage", "PIN_CODES"),
+            (
+                r"(\d{1,3}(?:,\d{3})*|\d+)\s*(?:\(\d+\))?\s*\n?\s*(?:Pin codes covered|PIN codes covered|pin codes)",
+                dynamic_entity,
+                "PIN Code Coverage",
+                "PIN_CODES",
+            ),
             # Freight tonnage
-            (r"([>~]?\d+(?:\.\d+)?\s*(?:Mn|million|K)?\s*tonnes\s*(?:\(\d+(?:,\d+)?\))?\s*\n?\s*Part-truckload freight[A-Za-z\s\n]*)", dynamic_entity, "PTL Freight Delivered", "TONNES"),
+            (
+                r"([>~]?\d+(?:\.\d+)?\s*(?:Mn|million|K)?\s*tonnes\s*(?:\(\d+(?:,\d+)?\))?\s*\n?\s*Part-truckload freight[A-Za-z\s\n]*)",
+                dynamic_entity,
+                "PTL Freight Delivered",
+                "TONNES",
+            ),
             # Workforce
-            (r"(\d{1,3}(?:,\d{3})*|\d+)\s*(?:\(\d+(?:,\d+)?\))?\s*\n?\s*(?:Workforce strength|employees|workforce)", dynamic_entity, "Workforce Strength", "COUNT"),
+            (
+                r"(\d{1,3}(?:,\d{3})*|\d+)\s*(?:\(\d+(?:,\d+)?\))?\s*\n?\s*(?:Workforce strength|employees|workforce)",
+                dynamic_entity,
+                "Workforce Strength",
+                "COUNT",
+            ),
             # Logistics area
-            (r"(\d+(?:\.\d+)?\s*(?:Mn|million)?\s*Sq ft\s*(?:\(\d+\))?\s*\n?\s*Logistics area[A-Za-z\s\n]*)", dynamic_entity, "Logistics Area Under Management", "SQ_FT"),
+            (
+                r"(\d+(?:\.\d+)?\s*(?:Mn|million)?\s*Sq ft\s*(?:\(\d+\))?\s*\n?\s*Logistics area[A-Za-z\s\n]*)",
+                dynamic_entity,
+                "Logistics Area Under Management",
+                "SQ_FT",
+            ),
             # Active customers
-            (r"([>~]?\d{1,3}(?:,\d{3})*|\d+)\s*(?:\(\d+(?:,\d+)?\))?\s*\n?\s*(?:Active customers)", dynamic_entity, "Active Customers", "COUNT"),
+            (
+                r"([>~]?\d{1,3}(?:,\d{3})*|\d+)\s*(?:\(\d+(?:,\d+)?\))?\s*\n?\s*(?:Active customers)",
+                dynamic_entity,
+                "Active Customers",
+                "COUNT",
+            ),
             # Annual report summary figures
-            (r"(\d+(?:\.\d+)?\s*(?:Mn|million|Bn|billion|K)?\s*Express parcels shipped)", dynamic_entity, "Express Parcel Volume", "PARCELS"),
-            (r"((?:₹|Rs\.?|INR|\$)\s*\d+(?:\.\d+)?|\d{1,3}(?:,\d{3})*)\s*(?:Mn|million|Cr|crore|crores|Bn|billion)?\s*Revenue from services", dynamic_entity, "Revenue from Services", "INR"),
-            (r"((?:₹|Rs\.?|INR|\$)\s*\d+(?:\.\d+)?|\d{1,3}(?:,\d{3})*)\s*(?:Mn|million|Cr|crore|crores|Bn|billion)?\s*EBITDA\b", dynamic_entity, "EBITDA", "INR"),
+            (
+                r"(\d+(?:\.\d+)?\s*(?:Mn|million|Bn|billion|K)?\s*Express parcels shipped)",
+                dynamic_entity,
+                "Express Parcel Volume",
+                "PARCELS",
+            ),
+            (
+                r"((?:₹|Rs\.?|INR|\$)\s*\d+(?:\.\d+)?|\d{1,3}(?:,\d{3})*)\s*(?:Mn|million|Cr|crore|crores|Bn|billion)?\s*Revenue from services",
+                dynamic_entity,
+                "Revenue from Services",
+                "INR",
+            ),
+            (
+                r"((?:₹|Rs\.?|INR|\$)\s*\d+(?:\.\d+)?|\d{1,3}(?:,\d{3})*)\s*(?:Mn|million|Cr|crore|crores|Bn|billion)?\s*EBITDA\b",
+                dynamic_entity,
+                "EBITDA",
+                "INR",
+            ),
         ]
 
         for pattern, entity_default, attr_default, unit_default in kpi_patterns:
             for m in re.finditer(pattern, text, re.IGNORECASE):
                 quote = m.group(0).strip()
                 # Find number inside quote
-                num_m = re.search(r"([>~]?\d+(?:\.\d+)?\s*(?:Bn|Mn|million|billion|K)?|\d{1,3}(?:,\d{3})*)", quote)
+                num_m = re.search(
+                    r"([>~]?\d+(?:\.\d+)?\s*(?:Bn|Mn|million|billion|K)?|\d{1,3}(?:,\d{3})*)", quote
+                )
                 raw_val = num_m.group(0).strip() if num_m else quote
                 canon_val = self._parse_canonical_number(raw_val)
                 temporal_info = self._extract_temporal_hint(quote, text)
@@ -267,7 +332,11 @@ class FactExtractor:
 
             canon_val = self._parse_canonical_number(val_str)
             temporal_info = self._extract_temporal_hint(quote, text)
-            unit = "INR" if ("₹" in val_str or "Rs" in val_str or "INR" in val_str or "Cr" in val_str) else "USD"
+            unit = (
+                "INR"
+                if ("₹" in val_str or "Rs" in val_str or "INR" in val_str or "Cr" in val_str)
+                else "USD"
+            )
 
             facts.append(
                 GroundedFact(
@@ -340,7 +409,11 @@ class FactExtractor:
             quote = f"[Visual Chart]: {m.group(0).strip()} (X-Axis: {chunk.doc_name} Pg {chunk.page_number})"
             canon_val = self._parse_canonical_number(val_str)
             temporal_info = self._extract_temporal_hint(quote, text)
-            unit = "INR" if ("₹" in val_str or "Rs" in val_str or "INR" in val_str or "Cr" in val_str) else "USD"
+            unit = (
+                "INR"
+                if ("₹" in val_str or "Rs" in val_str or "INR" in val_str or "Cr" in val_str)
+                else "USD"
+            )
 
             facts.append(
                 GroundedFact(
@@ -376,7 +449,7 @@ class FactExtractor:
         return PageExtractionBatch(facts=unique_facts)
 
     @staticmethod
-    def _parse_canonical_number(val_str: str) -> Optional[float]:
+    def _parse_canonical_number(val_str: str) -> float | None:
         """
         Convert string numbers like ₹81,415Mn, ₹40,000 million, 18,793, 2.8Bn, 12.5% into canonical floats.
         Supports Crores (Cr), Lakhs (L), Millions (Mn), Billions (Bn), Thousands (K).
@@ -385,14 +458,22 @@ class FactExtractor:
             return None
 
         # Clean symbols
-        clean = val_str.replace("₹", "").replace("$", "").replace("Rs.", "").replace("Rs", "").replace("INR", "").replace(",", "").strip()
+        clean = (
+            val_str.replace("₹", "")
+            .replace("$", "")
+            .replace("Rs.", "")
+            .replace("Rs", "")
+            .replace("INR", "")
+            .replace(",", "")
+            .strip()
+        )
         multiplier = 1.0
 
         if re.search(r"\bcrores?\b|\bCr\b", clean, re.IGNORECASE):
             multiplier = 10_000_000.0  # 1 Cr = 10 Million = 10,000,000
             clean = re.sub(r"\bcrores?\b|\bCr\b", "", clean, flags=re.IGNORECASE).strip()
         elif re.search(r"\blakhs?\b|\bL\b", clean, re.IGNORECASE):
-            multiplier = 100_000.0     # 1 Lakh = 100,000
+            multiplier = 100_000.0  # 1 Lakh = 100,000
             clean = re.sub(r"\blakhs?\b|\bL\b", "", clean, flags=re.IGNORECASE).strip()
         elif re.search(r"\bbillion\b|\bBn\b|\bB\b", clean, re.IGNORECASE):
             multiplier = 1_000_000_000.0
@@ -415,13 +496,15 @@ class FactExtractor:
             return None
 
     @staticmethod
-    def _extract_temporal_hint(quote: str, page_text: str) -> Optional[TemporalInterval]:
+    def _extract_temporal_hint(quote: str, page_text: str) -> TemporalInterval | None:
         """
         Extract temporal horizons including Indian fiscal years (FY24, FY22, Fiscal 2020),
         dates (March 31, 2024), quarters (Q4 FY24), and perpetual bounds (since inception).
         """
         # 1. Perpetual / Inception check
-        if re.search(r"\bsince inception\b", quote, re.IGNORECASE) or re.search(r"\bsince inception\b", page_text, re.IGNORECASE):
+        if re.search(r"\bsince inception\b", quote, re.IGNORECASE) or re.search(
+            r"\bsince inception\b", page_text, re.IGNORECASE
+        ):
             return TemporalInterval(
                 raw_expression="since inception",
                 granularity="PERPETUAL",
@@ -446,7 +529,9 @@ class FactExtractor:
             )
 
         # 3. Fiscal Year (FY24, FY2024, Fiscal 2022, Fiscal 2026, FY22)
-        fy_match = re.search(r"\b(FY\s*20\d\d|FY\s*\d\d|Fiscal\s*20\d\d|Fiscal\s*\d\d)\b", quote, re.IGNORECASE)
+        fy_match = re.search(
+            r"\b(FY\s*20\d\d|FY\s*\d\d|Fiscal\s*20\d\d|Fiscal\s*\d\d)\b", quote, re.IGNORECASE
+        )
         if fy_match:
             raw = fy_match.group(1).strip()
             yr_digits = re.search(r"\d+", raw).group(0)
@@ -478,7 +563,9 @@ class FactExtractor:
             )
 
         # If quote itself lacks temporal hint, check page header/context
-        para_fy = re.search(r"\b(FY\s*20\d\d|FY\s*\d\d|Fiscal\s*20\d\d)\b", page_text, re.IGNORECASE)
+        para_fy = re.search(
+            r"\b(FY\s*20\d\d|FY\s*\d\d|Fiscal\s*20\d\d)\b", page_text, re.IGNORECASE
+        )
         if para_fy:
             raw = para_fy.group(1).strip()
             yr_digits = re.search(r"\d+", raw).group(0)
@@ -495,4 +582,3 @@ class FactExtractor:
 
 # Module alias
 Extractor = FactExtractor
-

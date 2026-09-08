@@ -4,17 +4,19 @@ Evaluates N-dimensional factual coordinates (Time, Scope, Unit, Value) to catego
 corroborations, genuine contradictions, and context-reconciled discrepancies.
 """
 
-from typing import List, Optional, Union
+from typing import Optional, Union
+
 from pydantic import BaseModel, Field
 
+from .intervals import IntervalRelation, evaluate_temporal_intervals
 from .models import GroundedFact
-from .intervals import evaluate_temporal_intervals, IntervalRelation
 
 
 class ReconciliationResult(BaseModel):
     """
     Structured outcome of a cross-document fact pair reconciliation.
     """
+
     case_type: str = Field(
         description="One of 'CASE_1_CORROBORATION', 'CASE_2_GENUINE_CONTRADICTION', or 'CASE_3_CONTEXT_RECONCILED'.",
     )
@@ -27,7 +29,7 @@ class ReconciliationResult(BaseModel):
     fact_b: GroundedFact = Field(
         description="Second GroundedFact in the comparison pair.",
     )
-    differing_dimensions: List[str] = Field(
+    differing_dimensions: list[str] = Field(
         default_factory=list,
         description="List of coordinate dimensions that differ between the two facts.",
     )
@@ -40,8 +42,8 @@ class FactReconciler:
 
     @staticmethod
     def values_match(
-        v1: Optional[Union[float, int, str, bool]],
-        v2: Optional[Union[float, int, str, bool]],
+        v1: Union[float, int, str, bool] | None,
+        v2: Union[float, int, str, bool] | None,
         float_tolerance: float = 0.005,
     ) -> bool:
         """
@@ -67,9 +69,7 @@ class FactReconciler:
         return str(v1).strip().lower() == str(v2).strip().lower()
 
     @classmethod
-    def reconcile(
-        cls, f1: GroundedFact, f2: GroundedFact
-    ) -> Optional[ReconciliationResult]:
+    def reconcile(cls, f1: GroundedFact, f2: GroundedFact) -> ReconciliationResult | None:
         """
         Reconcile two grounded facts across documents deterministically.
 
@@ -92,9 +92,7 @@ class FactReconciler:
             return None
 
         # Evaluate N-dimensional context coordinates
-        temp_rel = evaluate_temporal_intervals(
-            f1.context_box.temporal, f2.context_box.temporal
-        )
+        temp_rel = evaluate_temporal_intervals(f1.context_box.temporal, f2.context_box.temporal)
         same_scope = f1.context_box.scope.strip().lower() == f2.context_box.scope.strip().lower()
         same_unit = f1.context_box.canonical_unit == f2.context_box.canonical_unit
         values_are_equal = cls.values_match(f1.canonical_value, f2.canonical_value)
@@ -142,14 +140,10 @@ class FactReconciler:
         diff_axes = []
         if temp_rel not in (IntervalRelation.EQUAL, IntervalRelation.PERPETUAL):
             f1_time_expr = (
-                f1.context_box.temporal.raw_expression
-                if f1.context_box.temporal
-                else "UNKNOWN"
+                f1.context_box.temporal.raw_expression if f1.context_box.temporal else "UNKNOWN"
             )
             f2_time_expr = (
-                f2.context_box.temporal.raw_expression
-                if f2.context_box.temporal
-                else "UNKNOWN"
+                f2.context_box.temporal.raw_expression if f2.context_box.temporal else "UNKNOWN"
             )
 
             if temp_rel == IntervalRelation.DISJOINT:
@@ -157,13 +151,9 @@ class FactReconciler:
                     f"Temporal Progression/Evolution ({f1_time_expr} vs {f2_time_expr})"
                 )
             elif temp_rel in (IntervalRelation.SUBSET, IntervalRelation.SUPERSET):
-                diff_axes.append(
-                    "Aggregation Scope (Quarterly sub-period vs Full Fiscal Year)"
-                )
+                diff_axes.append("Aggregation Scope (Quarterly sub-period vs Full Fiscal Year)")
             else:
-                diff_axes.append(
-                    f"Different Time Windows ({f1_time_expr} vs {f2_time_expr})"
-                )
+                diff_axes.append(f"Different Time Windows ({f1_time_expr} vs {f2_time_expr})")
 
         if not same_scope:
             diff_axes.append(

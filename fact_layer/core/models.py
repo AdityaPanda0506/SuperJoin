@@ -4,24 +4,23 @@ Models facts as N-dimensional context-bounded hyper-tuples with strict provenanc
 """
 
 import hashlib
-from typing import Literal, Optional, Union, List
+from typing import Literal, Optional, Union
+
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-
-GranularityType = Literal[
-    "EXACT_DATE", "MONTH", "QUARTER", "YEAR", "PERPETUAL", "UNKNOWN"
-]
+GranularityType = Literal["EXACT_DATE", "MONTH", "QUARTER", "YEAR", "PERPETUAL", "UNKNOWN"]
 
 
 class TemporalInterval(BaseModel):
     """
     Temporal context window bounding a fact.
     """
-    start_date: Optional[str] = Field(
+
+    start_date: str | None = Field(
         default=None,
         description="ISO-8601 YYYY-MM-DD or year YYYY, if applicable.",
     )
-    end_date: Optional[str] = Field(
+    end_date: str | None = Field(
         default=None,
         description="ISO-8601 YYYY-MM-DD or year YYYY, if applicable.",
     )
@@ -29,7 +28,7 @@ class TemporalInterval(BaseModel):
         default="UNKNOWN",
         description="Precision level of the temporal expression.",
     )
-    raw_expression: Optional[str] = Field(
+    raw_expression: str | None = Field(
         default=None,
         description="Verbatim temporal wording from source (e.g., 'Q3 2023', 'FY22').",
     )
@@ -39,7 +38,8 @@ class ContextBoundingBox(BaseModel):
     """
     N-dimensional bounding box qualifying the factual scope, unit, and time horizon.
     """
-    temporal: Optional[TemporalInterval] = Field(
+
+    temporal: TemporalInterval | None = Field(
         default=None,
         description="Temporal interval associated with the fact.",
     )
@@ -57,6 +57,7 @@ class Provenance(BaseModel):
     """
     Strict lineage and ground-truth link back to source PDF document page.
     """
+
     source_doc_name: str = Field(
         description="Filename or path of source PDF.",
     )
@@ -80,6 +81,7 @@ class GroundedFact(BaseModel):
     """
     Factual hyper-tuple representing an actionable business or semantic claim.
     """
+
     fact_id: str = Field(
         default="",
         description="Deterministic SHA-256 hash derived from entity, attribute, doc_hash, page, and raw_value.",
@@ -93,7 +95,7 @@ class GroundedFact(BaseModel):
     raw_value: str = Field(
         description="Verbatim string representation of value (e.g. '$12.5M', 'Resigned').",
     )
-    canonical_value: Optional[Union[float, int, str, bool]] = Field(
+    canonical_value: Union[float, int, str, bool] | None = Field(
         default=None,
         description="Normalized value for deterministic comparison (e.g. 12500000.0).",
     )
@@ -114,7 +116,7 @@ class GroundedFact(BaseModel):
         default=False,
         description="Circuit breaker flag set when integrity checks fail.",
     )
-    quarantine_reason: Optional[str] = Field(
+    quarantine_reason: str | None = Field(
         default=None,
         description="Explanation of integrity failure if quarantined.",
     )
@@ -138,7 +140,8 @@ class PageExtractionBatch(BaseModel):
     """
     Structured extraction batch payload returned per page.
     """
-    facts: List[GroundedFact] = Field(
+
+    facts: list[GroundedFact] = Field(
         default_factory=list,
         description="List of extracted grounded facts for a document chunk.",
     )

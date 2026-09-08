@@ -6,16 +6,16 @@ and O(N_new * K_matched) incremental reconciliation using token Jaccard similari
 
 import json
 import sqlite3
-from typing import Dict, List, Optional, Tuple
 from pathlib import Path
+from typing import Optional
 
 from .models import (
-    GroundedFact,
     ContextBoundingBox,
-    TemporalInterval,
+    GroundedFact,
     Provenance,
+    TemporalInterval,
 )
-from .normalizer import GeneralizedNormalizer, DomainNormalizer
+from .normalizer import DomainNormalizer, GeneralizedNormalizer
 from .reconciler import FactReconciler, ReconciliationResult
 
 
@@ -103,12 +103,8 @@ class FactStore:
         cursor.execute(
             "CREATE INDEX IF NOT EXISTS idx_entity_attr ON facts (entity_canonical, attribute_canonical)"
         )
-        cursor.execute(
-            "CREATE INDEX IF NOT EXISTS idx_attr ON facts (attribute_canonical)"
-        )
-        cursor.execute(
-            "CREATE INDEX IF NOT EXISTS idx_doc_hash ON facts (doc_hash)"
-        )
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_attr ON facts (attribute_canonical)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_doc_hash ON facts (doc_hash)")
 
         self.conn.commit()
 
@@ -120,10 +116,10 @@ class FactStore:
 
     def add_document_facts(
         self,
-        facts: List[GroundedFact],
+        facts: list[GroundedFact],
         doc_hash: str,
         doc_name: str,
-    ) -> List[ReconciliationResult]:
+    ) -> list[ReconciliationResult]:
         """
         Incrementally ingest new document facts into the store.
         Reconciles newly extracted facts against existing store without re-indexing prior documents.
@@ -139,11 +135,13 @@ class FactStore:
         """
         # Step 1: Check duplicate document re-ingestion
         if self.is_document_ingested(doc_hash):
-            print(f"[Info] Document '{doc_name}' ({doc_hash[:12]}...) is already in store. Skipping re-indexing.")
+            print(
+                f"[Info] Document '{doc_name}' ({doc_hash[:12]}...) is already in store. Skipping re-indexing."
+            )
             return []
 
         cursor = self.conn.cursor()
-        new_results: List[ReconciliationResult] = []
+        new_results: list[ReconciliationResult] = []
 
         # Step 2: Process each fact
         for fact in facts:
@@ -176,9 +174,9 @@ class FactStore:
             # Step 3: Query candidate facts by attribute_canonical from OTHER documents
             cursor.execute(
                 """
-                SELECT * FROM facts 
-                WHERE attribute_canonical = ? 
-                  AND doc_hash != ? 
+                SELECT * FROM facts
+                WHERE attribute_canonical = ?
+                  AND doc_hash != ?
                   AND is_quarantined = 0
                 """,
                 (attr_canon, doc_hash),
@@ -193,9 +191,7 @@ class FactStore:
                 entity_sim = GeneralizedNormalizer.compute_similarity(
                     existing_entity_raw, fact.entity
                 )
-                same_entity_cluster = (
-                    entity_sim >= 0.70 or existing_entity_canon == ent_canon
-                )
+                same_entity_cluster = entity_sim >= 0.70 or existing_entity_canon == ent_canon
 
                 if same_entity_cluster:
                     existing_fact = self._row_to_grounded_fact(row)
@@ -216,15 +212,9 @@ class FactStore:
     ):
         """Insert or replace a fact record into the SQLite facts table."""
         canon_num = (
-            float(fact.canonical_value)
-            if isinstance(fact.canonical_value, (int, float))
-            else None
+            float(fact.canonical_value) if isinstance(fact.canonical_value, (int, float)) else None
         )
-        canon_str = (
-            str(fact.canonical_value)
-            if fact.canonical_value is not None
-            else None
-        )
+        canon_str = str(fact.canonical_value) if fact.canonical_value is not None else None
 
         temp = fact.context_box.temporal
         modality = getattr(fact.provenance, "provenance_modality", "TEXT")
@@ -264,9 +254,7 @@ class FactStore:
             ),
         )
 
-    def _save_relationship_record(
-        self, cursor: sqlite3.Cursor, res: ReconciliationResult
-    ):
+    def _save_relationship_record(self, cursor: sqlite3.Cursor, res: ReconciliationResult):
         """Insert a relationship record into the SQLite relationships table."""
         cursor.execute(
             """
@@ -329,19 +317,19 @@ class FactStore:
             quarantine_reason=row["quarantine_reason"],
         )
 
-    def get_all_facts(self) -> List[GroundedFact]:
+    def get_all_facts(self) -> list[GroundedFact]:
         """Retrieve all stored facts."""
         cursor = self.conn.cursor()
         cursor.execute("SELECT * FROM facts")
         return [self._row_to_grounded_fact(r) for r in cursor.fetchall()]
 
-    def get_quarantined_facts(self) -> List[GroundedFact]:
+    def get_quarantined_facts(self) -> list[GroundedFact]:
         """Retrieve all quarantined facts."""
         cursor = self.conn.cursor()
         cursor.execute("SELECT * FROM facts WHERE is_quarantined = 1")
         return [self._row_to_grounded_fact(r) for r in cursor.fetchall()]
 
-    def get_all_relationships(self) -> List[Tuple[str, str, str, str]]:
+    def get_all_relationships(self) -> list[tuple[str, str, str, str]]:
         """Retrieve all stored relationships."""
         cursor = self.conn.cursor()
         cursor.execute("SELECT fact_id_a, fact_id_b, case_type, rationale FROM relationships")

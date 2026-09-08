@@ -7,7 +7,8 @@ and Jaccard token set similarity for dynamic entity/attribute clustering.
 import re
 from datetime import date, datetime
 from difflib import SequenceMatcher
-from typing import Any, Optional, Set, Tuple
+from typing import Any, Optional
+
 import dateparser
 
 from .models import TemporalInterval
@@ -58,7 +59,7 @@ class GeneralizedNormalizer:
     }
 
     @classmethod
-    def clean_token_set(cls, text: str) -> Set[str]:
+    def clean_token_set(cls, text: str) -> set[str]:
         """Tokenizes, lowercases, and strips non-alphanumeric noise."""
         if not text:
             return set()
@@ -81,7 +82,18 @@ class GeneralizedNormalizer:
             return 1.0
 
         # Remove generic corporate legal form noise for accurate entity matching
-        legal_noise = {"limited", "ltd", "inc", "corp", "corporation", "llp", "pvt", "private", "co", "company"}
+        legal_noise = {
+            "limited",
+            "ltd",
+            "inc",
+            "corp",
+            "corporation",
+            "llp",
+            "pvt",
+            "private",
+            "co",
+            "company",
+        }
         t1_raw = re.findall(r"\w+", s1)
         t2_raw = re.findall(r"\w+", s2)
 
@@ -127,16 +139,16 @@ class GeneralizedNormalizer:
         return "_".join(clean_tokens) if clean_tokens else "attribute"
 
     @classmethod
-    def canonicalize_keys(cls, entity: str, attribute: str) -> Tuple[str, str]:
+    def canonicalize_keys(cls, entity: str, attribute: str) -> tuple[str, str]:
         """Return tuple of (canonical_entity, canonical_attribute)."""
         return cls.canonicalize_entity(entity), cls.canonicalize_attribute(attribute)
 
     @classmethod
     def canonicalize_value_and_unit(
-        cls, raw_val: Any, raw_unit: Optional[str] = None
-    ) -> Tuple[Optional[float], str]:
+        cls, raw_val: Any, raw_unit: str | None = None
+    ) -> tuple[float | None, str]:
         """
-        Algorithmically normalizes arbitrary numbers, multipliers, and scales 
+        Algorithmically normalizes arbitrary numbers, multipliers, and scales
         to an unscaled base float representation without hardcoding.
         """
         if raw_val is None or str(raw_val).strip() == "":
@@ -179,18 +191,17 @@ class GeneralizedNormalizer:
         return (base_number * multiplier, detected_unit)
 
     @classmethod
-    def canonicalize_temporal_interval(
-        cls, raw_expr: Optional[str]
-    ) -> TemporalInterval:
+    def canonicalize_temporal_interval(cls, raw_expr: str | None) -> TemporalInterval:
         """
-        Algorithmically infers start and end dates from temporal strings 
+        Algorithmically infers start and end dates from temporal strings
         (fiscal years, quarters, exact dates) using dateparser.
         """
-        if (
-            not raw_expr
-            or str(raw_expr).strip().lower()
-            in ["none", "perpetual", "unknown", "since inception"]
-        ):
+        if not raw_expr or str(raw_expr).strip().lower() in [
+            "none",
+            "perpetual",
+            "unknown",
+            "since inception",
+        ]:
             return TemporalInterval(
                 start_date=None,
                 end_date=None,
@@ -207,9 +218,7 @@ class GeneralizedNormalizer:
             re.IGNORECASE,
         )
         if fy_match and (
-            "fy" in clean_expr.lower()
-            or "fiscal" in clean_expr.lower()
-            or "-" in clean_expr
+            "fy" in clean_expr.lower() or "fiscal" in clean_expr.lower() or "-" in clean_expr
         ):
             start_y = int(fy_match.group(1))
             if start_y < 100:

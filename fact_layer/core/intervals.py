@@ -4,6 +4,7 @@ Determines temporal relations between fact context windows.
 """
 
 from typing import Optional
+
 from .models import TemporalInterval
 
 
@@ -11,17 +12,18 @@ class IntervalRelation:
     """
     Formal interval relations defined by Allen's Interval Algebra.
     """
-    EQUAL = "EQUAL"                    # T1 == T2
-    DISJOINT = "DISJOINT"              # T1 ends before T2 begins (or vice versa)
-    SUBSET = "SUBSET"                  # T1 is strictly contained within T2
-    SUPERSET = "SUPERSET"              # T1 strictly contains T2
-    OVERLAPPING = "OVERLAPPING"        # Partial intersection
-    PERPETUAL = "PERPETUAL"            # One or both intervals are timeless / perpetual
+
+    EQUAL = "EQUAL"  # T1 == T2
+    DISJOINT = "DISJOINT"  # T1 ends before T2 begins (or vice versa)
+    SUBSET = "SUBSET"  # T1 is strictly contained within T2
+    SUPERSET = "SUPERSET"  # T1 strictly contains T2
+    OVERLAPPING = "OVERLAPPING"  # Partial intersection
+    PERPETUAL = "PERPETUAL"  # One or both intervals are timeless / perpetual
 
 
 def evaluate_temporal_intervals(
-    t1: Optional[TemporalInterval],
-    t2: Optional[TemporalInterval],
+    t1: TemporalInterval | None,
+    t2: TemporalInterval | None,
 ) -> str:
     """
     Evaluate the formal temporal relationship between two TemporalInterval objects.
