@@ -212,7 +212,7 @@ class FactStore:
     ):
         """Insert or replace a fact record into the SQLite facts table."""
         canon_num = (
-            float(fact.canonical_value) if isinstance(fact.canonical_value, (int, float)) else None
+            float(fact.canonical_value) if isinstance(fact.canonical_value, int | float) else None
         )
         canon_str = str(fact.canonical_value) if fact.canonical_value is not None else None
 

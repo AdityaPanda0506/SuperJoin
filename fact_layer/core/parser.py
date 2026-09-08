@@ -196,7 +196,7 @@ class DocumentParser:
         Returns:
             Tuple of (doc_hash, list of PageChunk objects, dictionary of page_number -> clean_text).
         """
-        if isinstance(source_input, (str, Path)):
+        if isinstance(source_input, str | Path):
             path_obj = Path(source_input)
             filename = doc_name or path_obj.name
             with open(path_obj, "rb") as f:

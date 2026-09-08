@@ -53,7 +53,7 @@ class FactReconciler:
             return False
 
         # Numeric float / int comparison with tolerance
-        if isinstance(v1, (int, float)) and isinstance(v2, (int, float)):
+        if isinstance(v1, int | float) and isinstance(v2, int | float):
             v1_f, v2_f = float(v1), float(v2)
             if v1_f == v2_f == 0.0:
                 return True

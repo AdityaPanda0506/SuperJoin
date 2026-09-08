@@ -76,7 +76,7 @@ class FactIntegrityGate:
         Determine if a fact represents a quantitative/numeric claim.
         """
         # Check canonical value type
-        if isinstance(fact.canonical_value, (int, float)):
+        if isinstance(fact.canonical_value, int | float):
             return True
 
         # Check raw_value pattern (digits, currency symbols, percentages)
