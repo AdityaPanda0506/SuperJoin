@@ -13,7 +13,7 @@ Production-grade **Fact Knowledge Layer** built for the **Superjoin Engineering 
 
 ## 📽️ Video Demo
 
-> 🔗 **Demo Video Link:** [Click here to watch the video walkthrough (2m 48s)](YOUR_VIDEO_DEMO_LINK_HERE)
+> 🔗 **Demo Video Link:** [Click here to watch the video walkthrough (2m 48s)](superjoin_demo.mp4)
 > *Demonstrates live PDF ingestion, cross-document reconciliation, all 4 mandatory cases, and telemetry within the 3-minute limit.*
 
 ---
