@@ -13,8 +13,21 @@ Production-grade **Fact Knowledge Layer** built for the **Superjoin Engineering 
 
 ## 📽️ Video Demo
 
-> 🔗 **Demo Video Link:** [Click here to watch the video walkthrough (2m 48s)](superjoin_demo.mp4)
+![Demo Walkthrough Animation](sjgif.gif)
+
+> 🔗 **Demo Video Link:** [Click here to watch the full video walkthrough (3:00 min)](superjoin_demo.mp4)
 > *Demonstrates live PDF ingestion, cross-document reconciliation, all 4 mandatory cases, and telemetry within the 3-minute limit.*
+
+### 🖼️ Interactive Dashboard & Evidence Screenshots
+
+![Evidence Inspector & Case Reconciliation](sj1.png)
+*Figure 1: Cross-Document Evidence Inspector displaying Grounded Facts & 1D Interval Projections.*
+
+![Failure & Anomaly Quarantine Inspector](sj2.png)
+*Figure 2: Case 4 Anomaly Circuit Breaker isolating unanchored metrics and quote hallucinations.*
+
+![System Telemetry & Inverted Fact Directory](sj3.png)
+*Figure 3: Live System Telemetry, O(N*K) partition scale metrics, and inverted SQLite fact directory.*
 
 ---
 
