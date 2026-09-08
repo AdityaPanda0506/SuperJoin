@@ -5,6 +5,7 @@
 [![Incremental Latency](https://img.shields.io/badge/Ingestion--Latency-2.20_ms-blue.svg)](tests/test_backend_rigorous.py)
 [![Reconciliation Macro-F1](https://img.shields.io/badge/Macro--F1-1.00-emerald.svg)](tests/evaluate_nli_metrics.py)
 [![Streamlit UI](https://img.shields.io/badge/UI--Console-Vercel--Grade-purple.svg)](app.py)
+[![CI / CD](https://github.com/AdityaPanda0506/SuperJoin/actions/workflows/ci.yml/badge.svg)](https://github.com/AdityaPanda0506/SuperJoin/actions/workflows/ci.yml)
 
 Production-grade **Fact Knowledge Layer** built for the **Superjoin Engineering Assignment**. This system ingests arbitrary corporate filings and macroeconomic PDFs, extracts grounded facts with strict page and quote provenance, models multi-dimensional context bounding boxes, and deterministically reconciles cross-document relationships using **Allen's 1D Interval Algebra** with **zero domain hardcoding**.
 
