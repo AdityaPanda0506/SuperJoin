@@ -1,7 +1,6 @@
 # Fact Knowledge Layer: N-Dimensional Bounding Box Engine & Circuit Breaker
 
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](https://www.python.org/)
-[![Benchmark Score](https://img.shields.io/badge/Benchmark--Rating-9.89%2F10.0-brightgreen.svg)](tests/test_backend_rigorous.py)
 [![Peak Heap Memory](https://img.shields.io/badge/Peak--Heap-12.94_MB-success.svg)](tests/test_backend_rigorous.py)
 [![Incremental Latency](https://img.shields.io/badge/Ingestion--Latency-2.20_ms-blue.svg)](tests/test_backend_rigorous.py)
 [![Reconciliation Macro-F1](https://img.shields.io/badge/Macro--F1-1.00-emerald.svg)](tests/evaluate_nli_metrics.py)
@@ -257,11 +256,3 @@ streamlit run app.py
 Open `http://localhost:8501` in your browser to test drag-and-drop PDF ingestion, inspect side-by-side evidence cards, and test the Case 4 circuit breaker.
 
 ---
-
-## 📝 Submission Checklist Verification
-
-- [x] **Setup and Run Instructions**: Detailed step-by-step instructions provided above.
-- [x] **Video Demo**: Link included at top of README.
-- [x] **Approach**: Bounding box schema, Allen's interval algebra, dual-track parser, and AI tools detailed.
-- [x] **Limitations and Next Steps**: Honest engineering reflection on trade-offs and future enhancements included.
-- [x] **Additional Notes**: Clean git commit history, zero credentials committed, 100% test coverage verified.
