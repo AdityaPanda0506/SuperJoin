@@ -18,3 +18,4 @@ pandas==2.3.3
 
 # ── Utilities ─────────────────────────────────────────────────────────────────
 python-dotenv==1.1.0
+dateparser>=1.2.0          # temporal string → ISO-8601 parsing in normalizer.py
