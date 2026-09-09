@@ -35,29 +35,6 @@ Production-grade **Fact Knowledge Layer** built for the **Superjoin Engineering 
 
 ![System Architecture](sjarch.png)
 
-```mermaid
-graph TD
-    PDF[Arbitrary PDF Filing / Excerpt] -->|Memory-Bounded Stream| Parser[Layout-Aware Dual-Track Parser]
-    
-    subgraph Opportunistic Dual-Track Pipeline
-        Parser -->|Track A: Fast Path PyMuPDF| TextChunks[Clean Page Text & Grid]
-        Parser -->|Track B: Graphics/Raster Gate| VisionRender[150 DPI Opportunistic Vision]
-    end
-
-    TextChunks --> Extractor[LLM & Fallback Fact Extractor]
-    VisionRender --> Extractor
-
-    Extractor -->|Raw Hyper-Tuples| Gate[Fact Integrity Gate & Anomaly Circuit Breaker]
-    
-    Gate -->|Quarantine Blocked Anomalies| Quarantine[Case 4: Anomaly Quarantine]
-    Gate -->|Verified Grounded Facts| Normalizer[Zero-Hardcoding Generalized Normalizer]
-    
-    Normalizer -->|Canonical Scale, Unit & ISO Interval| Store[(SQLite Inverted Fact Store)]
-    
-    Store -->|O_Nnew_Kmatch Attribute Lookup| Reconciler[Deterministic 4-Case Reconciler]
-    Reconciler -->|Allen's 1D Interval Algebra| Results[Case 1: Corroboration<br>Case 2: Contradiction<br>Case 3: Context-Reconciled]
-```
-
 ---
 
 ## 🧠 Approach & Key Architectural Decisions
